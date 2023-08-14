@@ -43,7 +43,6 @@ def translate_to_turkish(string):
 
 def convert_to_markdown(string):
     
-    string = translate_to_turkish(string)
     # Blockquote
     pattern = re.compile(r'\\begin{blockquote}(.*?)\\end{blockquote}', re.DOTALL)
     string = pattern.sub(replace_blockquote, string)
@@ -89,6 +88,53 @@ def convert_to_markdown(string):
 
     return html
 
+def convert_to_markdown2(string):
+    
+    string = translate_to_turkish(string)
+    # Blockquote
+    pattern = re.compile(r'\\begin{blockquote}(.*?)\\end{blockquote}', re.DOTALL)
+    string = pattern.sub(replace_blockquote, string)
+
+    # Code
+    string = string.replace('\\begin{code}', '```')
+    string = string.replace('\\end{code}', '```')
+    string = re.sub(r"(.)```", r"\1\n```", string)
+
+    result = ''
+    is_code = False
+    for line in string.split('\n'):
+        if line.lstrip(' ').startswith('```'):
+            is_code = not is_code
+
+        result += line
+        if is_code or line.startswith('|'):  # Don't add an extra \n for tables or code
+            result += '\n'
+        else:
+            result += '\n\n'
+
+    if is_code:
+        result = result + '```'  # Unfinished code block
+
+    result = result.strip()
+
+    # Unfinished list, like "\n1.". A |delete| string is added and then
+    # removed to force a <ol> to be generated instead of a <p>.
+    if re.search(r'(\d+\.?)$', result):
+        delete_str = '|delete|'
+
+        if not result.endswith('.'):
+            result += '.'
+
+        result = re.sub(r'(\d+\.)$', r'\g<1> ' + delete_str, result)
+
+        html = markdown.markdown(result, extensions=['fenced_code', 'tables'])
+        pos = html.rfind(delete_str)
+        if pos > -1:
+            html = html[:pos] + html[pos + len(delete_str):]
+    else:
+        html = markdown.markdown(result, extensions=['fenced_code', 'tables'])
+
+    return html
 
 def generate_basic_html(string):
     string = convert_to_markdown(string)
@@ -212,6 +258,36 @@ def generate_instruct_html(history):
 
     return output
 
+def generate_instruct_html2(history):
+    output = f'<style>{instruct_css}</style><div class="chat pretty_scrollbar" id="chat"><div class="messages">'
+    for i, _row in enumerate(history):
+        row = [convert_to_markdown2(entry) for entry in _row]
+
+        if row[0]:  # don't display empty user messages
+            output += f"""
+                  <div class="user-message">
+                    <div class="text">
+                      <div class="message-body">
+                        {row[0]}
+                      </div>
+                    </div>
+                  </div>
+                """
+
+        output += f"""
+              <div class="assistant-message">
+                <div class="text">
+                  <div class="message-body">
+                    {row[1]}
+                  </div>
+                </div>
+              </div>
+            """
+
+    output += "</div></div>"
+
+    return output
+
 
 def generate_cai_chat_html(history, name1, name2, style, reset_cache=False):
     output = f'<style>{chat_styles[style]}</style><div class="chat pretty_scrollbar" id="chat"><div class="messages">'
@@ -294,6 +370,14 @@ def generate_chat_html(history, name1, name2, reset_cache=False):
 def chat_html_wrapper(history, name1, name2, mode, style, reset_cache=False):
     if mode == 'instruct':
         return generate_instruct_html(history['visible'])
+    elif style == 'wpp':
+        return generate_chat_html(history['visible'], name1, name2)
+    else:
+        return generate_cai_chat_html(history['visible'], name1, name2, style, reset_cache)
+    
+def chat_html_wrapper2(history, name1, name2, mode, style, reset_cache=False):
+    if mode == 'instruct':
+        return generate_instruct_html2(history['visible'])
     elif style == 'wpp':
         return generate_chat_html(history['visible'], name1, name2)
     else:

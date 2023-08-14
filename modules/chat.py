@@ -11,7 +11,7 @@ from PIL import Image
 
 import modules.shared as shared
 from modules.extensions import apply_extensions
-from modules.html_generator import chat_html_wrapper, make_thumbnail
+from modules.html_generator import chat_html_wrapper, chat_html_wrapper2, make_thumbnail
 from modules.logging_colors import logger
 from modules.text_generation import (
     generate_reply,
@@ -300,9 +300,12 @@ def generate_chat_reply_wrapper(text, start_with, state, regenerate=False, _cont
         _continue = True
         send_dummy_message(text, state)
         send_dummy_reply(start_with, state)
-
+    
+    last_history = None
     for i, history in enumerate(generate_chat_reply(text, state, regenerate, _continue, loading_message=True)):
+        last_history = history
         yield chat_html_wrapper(history, state['name1'], state['name2'], state['mode'], state['chat_style']), history
+    yield chat_html_wrapper2(last_history, state['name1'], state['name2'], state['mode'], state['chat_style']), last_history
 
 
 def remove_last_message(history):
