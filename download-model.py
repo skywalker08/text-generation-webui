@@ -49,7 +49,7 @@ class ModelDownloader:
 
     def get_download_links_from_huggingface(self, model, branch, text_only=False):
         base = "https://huggingface.co"
-        page = f"/api/models/{model}"
+        page = f"/api/models/{model}/tree/{branch}"
         cursor = b""
 
         links = []
