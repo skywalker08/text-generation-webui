@@ -39,11 +39,11 @@ def replace_blockquote(m):
 def translate_to_turkish(string):
   translator = Translator()
 
-  translated_text = translator.translate("Merhaba Dünya", src='tr', dest='en')
+  translated_text = translator.translate(string, src='en', dest='tr')
   return translated_text
 
 def convert_to_markdown(string):
-    string = translate_to_turkish()
+    string = translate_to_turkish(string)
     # Blockquote
     pattern = re.compile(r'\\begin{blockquote}(.*?)\\end{blockquote}', re.DOTALL)
     string = pattern.sub(replace_blockquote, string)
