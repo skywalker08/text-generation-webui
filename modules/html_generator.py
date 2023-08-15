@@ -38,8 +38,8 @@ def replace_blockquote(m):
 
 def translate_to_turkish(string):
   translator = Translator()
-  if translator.detect(string).lang == 'tr':
-      return string
+  # if translator.detect(string).lang == 'tr':
+  #     return string
   
   translated_text = translator.translate(string, src='en', dest='tr')
   return translated_text.text
